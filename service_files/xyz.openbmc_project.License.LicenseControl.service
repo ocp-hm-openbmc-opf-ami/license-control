@@ -1,0 +1,17 @@
+[Unit]
+Description=License Control service
+StartLimitBurst=5
+StartLimitInterval=5min
+StartLimitAction=reboot
+
+[Service]
+ExecStart=/usr/bin/env licensecontrol
+SyslogIdentifier=license-control
+Restart=always
+RestartSec=5
+Type=dbus
+BusName=xyz.openbmc_project.License
+
+[Install]
+WantedBy=multi-user.target
+

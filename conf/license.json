@@ -1,0 +1,38 @@
+{
+    "licensableServices": [
+        {
+            "LicenseValidity": 0,
+            "serviceName": "KVM",
+            "serviceControlCmd": "start-ipkvm"
+        },
+        {
+            "LicenseValidity": 0,
+            "serviceName": "TMP",
+            "serviceControlCmd": []
+        },
+	{
+	    "LicenseValidity": 0,
+	    "serviceName": "MEDIA",
+	    "serviceControlCmd": "xyz.openbmc_project.VirtualMedia.service"
+	},
+	{
+            "LicenseValidity": 0,
+            "serviceName": "SMTP",
+            "serviceControlCmd": "mail-alert-manager.service"
+        },
+	{
+	   "LicenseValidity": 0,
+	   "serviceName": "SNMP",
+	   "serviceControlCmd": "xyz.openbmc_project.Network.SNMP"
+	}
+    ],
+    "licenseconfig": [
+        {
+            "globalLicenseValidity": 0,
+            "servicesUpCountDays": 0,
+	    "userAlertCount":0,
+            "effectiveTimeStamp":"",
+	    "MACId": 0
+        }
+    ]
+}
