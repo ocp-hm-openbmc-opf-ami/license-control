@@ -56,8 +56,10 @@ const std::string newLicenseValidityTokenPath = "/tmp/license-control/token";
 const std::string licensePublicKey = "/tmp/license-control/public.pem";
 const std::string UPLOADED_NEWKEYPATH = "/tmp/license-control/";
 const std::string UPLOADED_KEY_FILEFORMAT = ".key";
+const char COLON = ':';
+const char SEMICOLON = ';';
 const uint32_t maxUserAlertCountValue = 60;
-const uint32_t secToTriggerValidation = 86400;
+const uint32_t secToTriggerValidation = 300; // 5*60 = 300sec
 
 extern std::map<std::string, std::string> serviceDates;
 extern int decriptLicenseFile(const std::string &encryptLicencefile);
@@ -67,6 +69,7 @@ extern json globalData;
 extern bool exitSchedulerTask;
 extern int64_t UpCountDays;
 extern int64_t Globalvalidcount;
+extern uint32_t alertCountValue;
 extern std::string AlertNotificationLicenseControl;
 
 std::vector<std::string> getServiceCtlCommands(const std::string &serviceName,
@@ -118,7 +121,7 @@ public:
                             Argument::ARGUMENT_VALUE("error"));
     }
 
-    globalData["licenseconfig"][0]["userAlertCount"] = value;
+    globalData["licenseconfig"][0]["userAlertCount"] = alertCountValue = value;
 
     val = updateJson();
     if (val != 0) {

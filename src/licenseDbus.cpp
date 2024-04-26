@@ -21,6 +21,7 @@
 namespace fs = std::filesystem;
 
 const size_t GLOBAL_PREFIX_LENGTH = 7;
+const size_t TOKEN_VALIDITY_PREFIX_LENGTH = 10;
 const size_t TMP_BUFFER_LENGTH = 128;
 
 using DbusUserPropVariant =
@@ -38,7 +39,8 @@ void updateAlertNotification() {
   checkValidity();
 
   for (const auto &entry : serviceDates) {
-    AlertNotificationLicenseControl += (entry.first + ":" + entry.second + ";");
+    AlertNotificationLicenseControl +=
+        (entry.first + COLON + entry.second + SEMICOLON);
   }
   DEBUG(std::cout << "AlertNotificationLicenseControl: "
                   << AlertNotificationLicenseControl << std::endl;);
@@ -188,7 +190,7 @@ int getTimeStampfromLicence(const std::string &filePath) {
   if (std::getline(file, line)) {
     std::istringstream iss(line);
     std::string strTimeStamp;
-    std::getline(iss, strTimeStamp, ';');
+    std::getline(iss, strTimeStamp, SEMICOLON);
 
     int timeStamp;
     try {
@@ -303,6 +305,117 @@ int updateNewServiceValidity(const std::string &inputString, json &jsonData) {
   // Reset servicesUpCountDays to 0 since new key is added
   jsonData["licenseconfig"][0]["servicesUpCountDays"] = 0;
 
+  return 0;
+}
+
+std::string generateServiceValidityString(const json &jsonData) {
+  std::string ValidityString;
+
+  auto licensableServices = jsonData["licensableServices"];
+  for (auto &service : licensableServices) {
+    std::string serviceName = service["serviceName"];
+    int licenseValidity = service["LicenseValidity"];
+
+    if (licenseValidity > 0) {
+      if (!ValidityString.empty()) {
+        ValidityString += SEMICOLON;
+      }
+      ValidityString += serviceName + COLON + std::to_string(licenseValidity);
+    }
+  }
+
+  auto licenseConfig = jsonData["licenseconfig"];
+  if (!licenseConfig.empty() && licenseConfig.is_array() &&
+      !licenseConfig[0].empty()) {
+    int globalLicenseValidity = licenseConfig[0]["globalLicenseValidity"];
+    ValidityString += ";GLOBAL:" + std::to_string(globalLicenseValidity);
+  }
+
+  return ValidityString;
+}
+
+void parseService(const std::string &service, std::string &serviceName,
+                  int &serviceValue) {
+  std::istringstream iss(service);
+  std::getline(iss, serviceName, COLON);
+  iss >> serviceValue;
+}
+
+std::string updateTokenValiditySection(std::string str1,
+                                       const std::string &str2) {
+  std::istringstream iss2(str2);
+
+  std::ostringstream oss;
+  std::string segment_str2;
+
+  while (std::getline(iss2, segment_str2, SEMICOLON)) {
+    std::string serviceName;
+    int serviceValue;
+    parseService(segment_str2, serviceName, serviceValue);
+
+    size_t pos = str1.find(serviceName + COLON);
+    if (pos != std::string::npos) {
+      size_t startPos = pos + serviceName.length() + 1;
+      size_t endPos = str1.find(SEMICOLON, startPos);
+      str1.replace(startPos, endPos - startPos, std::to_string(serviceValue));
+    } else {
+      if (!str1.empty() && str1.back() != SEMICOLON) {
+        str1 += SEMICOLON;
+      }
+      str1 =
+          serviceName + COLON + std::to_string(serviceValue) + SEMICOLON + str1;
+    }
+  }
+
+  return str1;
+}
+
+int updateLicTokenwithExtValidity() {
+
+  std::stringstream buffer;
+  std::ifstream inputFile(licenseValidityTokenPath);
+  if (!inputFile) {
+    std::cerr << "Error: Cannot open input file " << licenseValidityTokenPath
+              << std::endl;
+    return -1;
+  }
+
+  buffer << inputFile.rdbuf();
+  std::string fileContent = buffer.str();
+  inputFile.close();
+
+  std::size_t validityPos = fileContent.find("-VALIDITY-");
+  if (validityPos == std::string::npos) {
+    std::cerr << "Error: VALIDITY section not found in the file." << std::endl;
+    return -1;
+  }
+
+  std::size_t start =
+      validityPos + TOKEN_VALIDITY_PREFIX_LENGTH; // Length of "-VALIDITY-"
+  std::size_t end = fileContent.find("-MAC-", start);
+  if (end == std::string::npos) {
+    std::cerr << "Error: End of VALIDITY section not found in the file."
+              << std::endl;
+    return -1;
+  }
+
+  std::string tokenValiditySection = fileContent.substr(start, end - start);
+  std::string jsonValidityString = generateServiceValidityString(globalData);
+
+  std::string modifiedTokenValiditySection =
+      updateTokenValiditySection(tokenValiditySection, jsonValidityString);
+
+  fileContent.replace(start, end - start, modifiedTokenValiditySection);
+
+  std::ofstream outputFile(licenseValidityTokenPath);
+  if (!outputFile) {
+    std::cerr << "Error: Cannot open output file " << licenseValidityTokenPath
+              << " for writing." << std::endl;
+    return -1;
+  }
+
+  outputFile << fileContent;
+  outputFile.close();
   return 0;
 }
 
@@ -523,10 +636,18 @@ bool LicenseControlImp::writeLicenseKeyToFile() {
     removeTempFiles();
     return false;
   }
-  exitSchedulerTask = false;
-
   sourceFile.close();
   destinationFile.close();
+
+  retVal = updateLicTokenwithExtValidity();
+  if (retVal != 0) {
+    std::cerr << "Failed to update License token with Extented validity"
+              << std::endl;
+    removeTempFiles();
+    return false;
+  }
+
+  exitSchedulerTask = false;
 
   updateAlertNotification();
 
@@ -559,7 +680,8 @@ std::string generateTotalValidityData() {
   }
 
   for (const auto &service : services) {
-    validityData += service.first + ":" + std::to_string(service.second) + ";";
+    validityData +=
+        service.first + COLON + std::to_string(service.second) + SEMICOLON;
   }
   DEBUG(std::cout << validityData << std::endl;);
 

@@ -374,7 +374,7 @@ void signalHandler(int signum) {
 
     for (const auto &entry : serviceDates) {
       AlertNotificationLicenseControl +=
-          (entry.first + ":" + entry.second + ";");
+          (entry.first + COLON + entry.second + SEMICOLON);
     }
   }
 }
@@ -433,8 +433,8 @@ int updateValidityFromLicensePeriod(const std::string &licensePeriod) {
   int retVal = 0;
 
   while (startPos < licensePeriod.size()) {
-    size_t colonPos = licensePeriod.find(':', startPos);
-    size_t semicolonPos = licensePeriod.find(';', colonPos);
+    size_t colonPos = licensePeriod.find(COLON, startPos);
+    size_t semicolonPos = licensePeriod.find(SEMICOLON, colonPos);
 
     if (colonPos != std::string::npos) {
       std::string service = licensePeriod.substr(startPos, colonPos - startPos);
