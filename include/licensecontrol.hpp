@@ -59,7 +59,7 @@ const std::string UPLOADED_KEY_FILEFORMAT = ".key";
 const char COLON = ':';
 const char SEMICOLON = ';';
 const uint32_t maxUserAlertCountValue = 60;
-const uint32_t secToTriggerValidation = 300; // 5*60 = 300sec
+const uint32_t secToTriggerValidation = 86400;
 
 extern std::map<std::string, std::string> serviceDates;
 extern int decriptLicenseFile(const std::string &encryptLicencefile);
