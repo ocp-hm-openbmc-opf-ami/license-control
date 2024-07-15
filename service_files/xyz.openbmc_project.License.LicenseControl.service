@@ -1,5 +1,6 @@
 [Unit]
 Description=License Control service
+After=systemd-timesyncd.service
 StartLimitBurst=5
 StartLimitInterval=5min
 StartLimitAction=reboot
@@ -8,7 +9,7 @@ StartLimitAction=reboot
 ExecStart=/usr/bin/env licensecontrol
 SyslogIdentifier=license-control
 Restart=always
-RestartSec=5
+RestartSec=60
 Type=dbus
 BusName=xyz.openbmc_project.License
 
