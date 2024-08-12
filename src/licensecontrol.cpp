@@ -495,6 +495,9 @@ int parseValidityData(const std::string &token) {
 int main() {
   std::string licenseToken = {};
   int ret = 0;
+  int attempt = 0;
+  int maxRetries = 3;
+  int delaySeconds = 60;
   auto bus = sdbusplus::bus::new_default();
 
   bus.request_name("xyz.openbmc_project.License");
@@ -513,12 +516,26 @@ int main() {
 
     if (fileStream.is_open()) {
       std::getline(fileStream, licenseToken);
-      if (validateTimeStampRunTime(licenseToken) != 0) {
-        std::cout << "Invalid BMC Time Stamp" << std::endl;
 
+      do {
+        ret = validateTimeStampRunTime(licenseToken);
+        if (ret == 0) {
+          break;
+        }
+
+        attempt++;
+        std::cout << "Invalid BMC Time Stamp. Attempt " << attempt << " of "
+                  << maxRetries << std::endl;
+
+        if (attempt < maxRetries) {
+          std::this_thread::sleep_for(std::chrono::seconds(delaySeconds));
+        }
+      } while (attempt < maxRetries);
+
+      if (ret != 0) {
         ret = controlGlobalProcess("stop");
         if (ret != 0) {
-          std::cerr << "Error enabling Global services " << std::endl;
+          std::cerr << "Error stopping Global services" << std::endl;
           return ret;
         }
 
