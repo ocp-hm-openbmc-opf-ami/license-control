@@ -555,6 +555,8 @@ int main() {
       }
 
       alertCountValue = globalData["licenseconfig"][0]["userAlertCount"];
+      UpCountDays = globalData["licenseconfig"][0]["servicesUpCountDays"];
+      Globalvalidcount = globalData["licenseconfig"][0]["globalLicenseValidity"];
 
       fileStream.close();
     } else {
