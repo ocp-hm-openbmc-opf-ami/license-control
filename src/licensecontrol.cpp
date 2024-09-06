@@ -570,6 +570,11 @@ int main() {
   LicenseControlImp licensecontrol(bus, objPath);
   licensecontrol.userAlertCount(alertCountValue);
 
+  ret = checkValidity();
+  if (ret == 1) {
+    exitSchedulerTask = true;
+  }
+
   auto eventHandler = std::async(std::launch::async, scheduler);
 
   bus.process_loop();

@@ -24,9 +24,7 @@
 #include <regex>
 #include <string>
 #include <vector>
-
 #define LC_PK_IDENTIFIER "$SHPKIDF$"
-#define Image_size 0x4000000
 #define LC_PK_OFFSET 0x2000
 #define LC_PK_SIZE 10
 #define erase_blk_size 0x10000
@@ -69,12 +67,35 @@ std::string getLicenseEncFile() {
   return directoryPath + uploadedKeyFileName;
 }
 
+uint64_t getImageSizeFromFWSize(const std::string &filePath = "/etc/FWSize") {
+  std::ifstream file(filePath);
+  if (!file.is_open()) {
+    std::cerr << "Error: Could not open file " << filePath << std::endl;
+    return 0;
+  }
+
+  std::string hexValue;
+  std::getline(file, hexValue);
+  file.close();
+
+  uint64_t imageSize;
+  std::istringstream(hexValue) >> std::hex >> imageSize;
+
+  return imageSize;
+}
+
 int getPublicKey() {
   int MTDDevId = 0;
   char pub_key_identifier[LC_PK_SIZE] = {0};
   char pub_key_length[4] = {0};
   int offset = 0;
   unsigned char *OneEBlock = nullptr;
+  uint64_t Image_size = getImageSizeFromFWSize();
+
+  if (Image_size == 0) {
+    std::cerr << "Error in getting Image Size" << std::endl;
+    return -1;
+  }
 
   OneEBlock = (unsigned char *)malloc(erase_blk_size);
   if (OneEBlock == nullptr) {
@@ -83,17 +104,13 @@ int getPublicKey() {
   }
 
   MTDDevId = open("/dev/mtd0", O_RDONLY);
+
   if (MTDDevId < 0) {
     std::cout << "Cannot open mtd raw device MTDDev. Exiting...\n";
-    if (MTDDevId >= 0) {
-      close(MTDDevId);
-      MTDDevId = -1;
-    }
     if (OneEBlock != nullptr) {
       free(OneEBlock);
       OneEBlock = nullptr;
     }
-
     return -1;
   }
 
@@ -176,13 +193,24 @@ int getPublicKey() {
 
   if (!publicFile.is_open()) {
     std::cerr << "Error: Unable to open file " << licensePublicKey << std::endl;
+    if (MTDDevId >= 0) {
+      close(MTDDevId);
+      MTDDevId = -1;
+    }
+    if (OneEBlock != nullptr) {
+      free(OneEBlock);
+      OneEBlock = nullptr;
+    }
     return -1;
   }
 
   publicFile << public_key;
 
   publicFile.close();
-
+  if (MTDDevId >= 0) {
+    close(MTDDevId);
+    MTDDevId = -1;
+  }
   if (OneEBlock != nullptr) {
     free(OneEBlock);
     OneEBlock = nullptr;
