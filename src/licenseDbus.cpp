@@ -442,19 +442,10 @@ bool isServiceRunning(const std::string &serviceName) {
 
 bool enableServices(const std::string &serviceName) {
 
-  int result = 0;
+  std::vector<std::string> systemCtlServiceNames = getSystemCtlServiceNames(serviceName);
 
-  std::vector<std::string> startServiceCommands =
-      getServiceCtlCommands(serviceName, "start");
-
-  for (const auto &command : startServiceCommands) {
-    std::cout << command << " ";
-
-    result = std::system(command.c_str());
-    if (result != 0) {
-      std::cerr << "Error executing command: " << command << std::endl;
-      return result;
-    }
+  for (const auto &systemCtlServiceName :systemCtlServiceNames) {
+      controlSystemdService(systemCtlServiceName , ServiceAction::Start);
   }
 
   return 0;
@@ -467,7 +458,7 @@ bool checkServiceStatus() {
       globalData["licenseconfig"][0]["globalLicenseValidity"];
 
   if (globalLicenseValidity >= 0) {
-    ret = controlGlobalProcess("start");
+    ret = controlGlobalProcess(ServiceAction::Start);
     if (ret != 0) {
       std::cerr << "Error enabling Global services " << std::endl;
       return ret;

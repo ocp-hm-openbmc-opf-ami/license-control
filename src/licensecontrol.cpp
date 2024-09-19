@@ -47,6 +47,43 @@ uint64_t convertTimeFormat(const std::string &timestampString) {
   return std::stoull(outputSS.str());
 }
 
+
+void controlSystemdService(const std::string &serviceName, ServiceAction action) 
+{
+
+    try {
+        auto bus = sdbusplus::bus::new_default();
+
+        std::string methodName;
+        if (action == ServiceAction::Start) {
+            methodName = "StartUnit";
+        } else if (action == ServiceAction::Stop) {
+            methodName = "StopUnit";
+        } else if (action == ServiceAction::Restart) {
+            methodName = "RestartUnit";
+        }
+
+        std::string mode = "replace";
+
+        auto msg = bus.new_method_call(
+                "org.freedesktop.systemd1", "/org/freedesktop/systemd1",
+                "org.freedesktop.systemd1.Manager", methodName.c_str());
+        msg.append(serviceName, mode);
+
+        bus.call_noreply(msg);
+
+    } catch (const sdbusplus::exception::SdBusError &e) {
+        if (action == ServiceAction::Start) {
+            std::cerr << "Failed to start service: " << e.what() << std::endl;
+        } else if (action == ServiceAction::Stop) {
+            std::cerr << "Failed to stop service: " << e.what() << std::endl;
+        } else if (action == ServiceAction::Restart) {
+            std::cerr << "Failed to Restart service: " << e.what() << std::endl;
+        }
+    }
+}
+
+
 std::string getCurrentTimestamp() {
   std::time_t now = std::time(nullptr);
   std::tm timeinfo = *std::localtime(&now);
@@ -138,12 +175,9 @@ appendServiceTypeToCommands(const std::vector<std::string> &commands,
   return resultCommands;
 }
 
-std::vector<std::string> getServiceCtlCommands(const std::string &serviceName,
-                                               const std::string &status) {
-  std::string serviceType =
-      (status == "start") ? "systemctl start" : "systemctl stop";
-
-  std::vector<std::string> commands = {};
+std::vector<std::string> getSystemCtlServiceNames(const std::string &serviceName) 
+{
+  std::vector<std::string> systemCtlServiceNames = {};
 
   if (globalData.contains("licensableServices")) {
     for (const auto &service : globalData["licensableServices"]) {
@@ -152,11 +186,11 @@ std::vector<std::string> getServiceCtlCommands(const std::string &serviceName,
         if (service.contains("serviceControlCmd")) {
           const auto &controlCmd = service["serviceControlCmd"];
           if (controlCmd.is_string()) {
-            commands.push_back(controlCmd);
+            systemCtlServiceNames.push_back(controlCmd);
           } else if (controlCmd.is_array()) {
             for (const auto &cmd : controlCmd) {
               if (cmd.is_string()) {
-                commands.push_back(cmd);
+                systemCtlServiceNames.push_back(cmd);
               }
             }
           }
@@ -165,10 +199,10 @@ std::vector<std::string> getServiceCtlCommands(const std::string &serviceName,
         break; // Stop searching once the serviceName is found
       }
     }
-    return appendServiceTypeToCommands(commands, serviceType);
+    return systemCtlServiceNames;
   }
 
-  return commands;
+  return systemCtlServiceNames;
 }
 
 // The function is used to get the specified variableName from the .json file.
@@ -198,33 +232,21 @@ std::vector<std::string> getSpecificValues(const std::string &variableName) {
   return values;
 }
 
-int controlGlobalProcess(const std::string &actionType) {
-  int result = 0;
+int controlGlobalProcess( ServiceAction action ) {
+
   std::vector<std::string> services = getSpecificValues("serviceControlCmd");
-  std::string serviceType = "systemctl " + actionType;
-  std::vector<std::string> allServices =
-      appendServiceTypeToCommands(services, serviceType);
 
-  for (const auto &command : allServices) {
-    result = std::system(command.c_str());
+  for (const auto &service : services) {
 
-    std::cout << command << " ";
-
-    if (result != 0) {
-      std::cerr << "Error executing command: " << command << std::endl;
-      return result;
-    }
+     controlSystemdService(service, action);
   }
-
-  std::cout << std::endl;
-
   return 0;
 }
 
 int checkServiceValidity() {
-  int isServiceValidityExceeded = 0, result = 0, numServicesInJson = 0;
+  int isServiceValidityExceeded = 0, numServicesInJson = 0;
 
-  std::vector<std::string> stopServiceCommands = {};
+  std::vector<std::string> SystemCtlServiceNames = {};
   std::vector<std::string> command = getSpecificValues("serviceName");
 
   for (const auto &ServiceNames : command) {
@@ -253,18 +275,13 @@ int checkServiceValidity() {
               << " has exceeded the license validity. Stopping the service."
               << std::endl;
           isServiceValidityExceeded++;
-          stopServiceCommands = getServiceCtlCommands(ServiceNames, "stop");
+          SystemCtlServiceNames = getSystemCtlServiceNames(ServiceNames);
 
-          for (const auto &command : stopServiceCommands) {
-            DEBUG(std::cout << command << " ";);
-
-            result = std::system(command.c_str());
-            if (result != 0) {
-              std::cerr << "Error executing stop command " << command
-                        << std::endl;
-              return result;
-            }
+          for (const auto &SystemCtlServiceName : SystemCtlServiceNames) {
+            DEBUG(std::cout << SystemCtlServiceName << " ";);
+            controlSystemdService(SystemCtlServiceName , ServiceAction::Stop);
           }
+
           DEBUG(std::cout << std::endl;);
         } else {
           if (alertCountValue != 0 &&
@@ -533,7 +550,7 @@ int main() {
       } while (attempt < maxRetries);
 
       if (ret != 0) {
-        ret = controlGlobalProcess("stop");
+        ret = controlGlobalProcess(ServiceAction::Stop);
         if (ret != 0) {
           std::cerr << "Error stopping Global services" << std::endl;
           return ret;

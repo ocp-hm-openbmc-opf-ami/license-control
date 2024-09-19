@@ -3,7 +3,7 @@
         {
             "LicenseValidity": 0,
             "serviceName": "KVM",
-            "serviceControlCmd": "start-ipkvm"
+            "serviceControlCmd": "start-ipkvm.service"
         },
         {
             "LicenseValidity": 0,
@@ -23,7 +23,7 @@
 	{
 	   "LicenseValidity": 0,
 	   "serviceName": "SNMP",
-	   "serviceControlCmd": "xyz.openbmc_project.Network.SNMP"
+	   "serviceControlCmd": "xyz.openbmc_project.Network.SNMP.service"
 	}
     ],
     "licenseconfig": [

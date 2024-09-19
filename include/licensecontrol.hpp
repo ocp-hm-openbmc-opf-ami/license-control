@@ -71,10 +71,10 @@ extern int64_t UpCountDays;
 extern int64_t Globalvalidcount;
 extern uint32_t alertCountValue;
 extern std::string AlertNotificationLicenseControl;
+enum class ServiceAction { Start, Stop, Restart };
 
-std::vector<std::string> getServiceCtlCommands(const std::string &serviceName,
-                                               const std::string &status);
-int controlGlobalProcess(const std::string &actionType);
+std::vector<std::string> getSystemCtlServiceNames(const std::string &serviceName);
+int controlGlobalProcess( ServiceAction action);
 int parseValidityData(const std::string &input);
 uint64_t convertTimeFormat(const std::string &timestampString);
 std::string getCurrentTimestamp();
@@ -85,6 +85,7 @@ int VaildateTimeStamp(const std::string &tokenString,
 int validateTimeStampRunTime(std::string &tokenString);
 int checkValidity();
 void updateAlertNotification();
+void controlSystemdService(const std::string &serviceName, ServiceAction action);
 int updateJson();
 uint32_t getMinValidityDate();
 
