@@ -15,7 +15,6 @@
 
 #include <boost/process/child.hpp>
 #include <boost/process/io.hpp>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
@@ -27,6 +26,8 @@
 #include <sdbusplus/server/object.hpp>
 #include <xyz/openbmc_project/Common/error.hpp>
 #include <xyz/openbmc_project/License/LicenseControl/server.hpp>
+
+#include <iostream>
 
 using namespace phosphor::logging;
 using json = nlohmann::json;
@@ -43,9 +44,10 @@ using Argument = xyz::openbmc_project::Common::InvalidArgument;
 
 #if DEBUG_ENABLED
 #define DEBUG(expression)                                                      \
-  do {                                                                         \
-    expression;                                                                \
-  } while (0)
+    do                                                                         \
+    {                                                                          \
+        expression;                                                            \
+    } while (0)
 #else
 #define DEBUG(expression) ((void)0)
 #endif
@@ -62,7 +64,7 @@ const uint32_t maxUserAlertCountValue = 60;
 const uint32_t secToTriggerValidation = 86400;
 
 extern std::map<std::string, std::string> serviceDates;
-extern int decriptLicenseFile(const std::string &encryptLicencefile);
+extern int decriptLicenseFile(const std::string& encryptLicencefile);
 extern std::string getLicenseEncFile();
 extern int getPublicKey();
 extern json globalData;
@@ -71,67 +73,80 @@ extern int64_t UpCountDays;
 extern int64_t Globalvalidcount;
 extern uint32_t alertCountValue;
 extern std::string AlertNotificationLicenseControl;
-enum class ServiceAction { Start, Stop, Restart };
+enum class ServiceAction
+{
+    Start,
+    Stop,
+    Restart
+};
 
-std::vector<std::string> getSystemCtlServiceNames(const std::string &serviceName);
-int controlGlobalProcess( ServiceAction action);
-int parseValidityData(const std::string &input);
-uint64_t convertTimeFormat(const std::string &timestampString);
+std::vector<std::string> getSystemCtlServiceNames(
+    const std::string& serviceName);
+int controlGlobalProcess(ServiceAction action);
+int parseValidityData(const std::string& input);
+uint64_t convertTimeFormat(const std::string& timestampString);
 std::string getCurrentTimestamp();
-std::string extractDataFromToken(const std::string &inputString,
-                                 const std::string &targetTimestamp);
-int VaildateTimeStamp(const std::string &tokenString,
-                      const std::string &NewtokenString);
-int validateTimeStampRunTime(std::string &tokenString);
+std::string extractDataFromToken(const std::string& inputString,
+                                 const std::string& targetTimestamp);
+int VaildateTimeStamp(const std::string& tokenString,
+                      const std::string& NewtokenString);
+int validateTimeStampRunTime(std::string& tokenString);
 int checkValidity();
 void updateAlertNotification();
-void controlSystemdService(const std::string &serviceName, ServiceAction action);
+void controlSystemdService(const std::string& serviceName,
+                           ServiceAction action);
 int updateJson();
 uint32_t getMinValidityDate();
 
-class LicenseControlImp : public IfcBase {
-private:
-  std::string licenseKeyAtBmc;
+class LicenseControlImp : public IfcBase
+{
+  private:
+    std::string licenseKeyAtBmc;
 
-  bool writeLicenseKeyToFile();
+    bool writeLicenseKeyToFile();
 
-public:
-  LicenseControlImp(sdbusplus::bus_t &bus, const char *path);
+  public:
+    LicenseControlImp(sdbusplus::bus_t& bus, const char* path);
 
-  int64_t servicesUpCountDays() override;
+    int64_t servicesUpCountDays() override;
 
-  int64_t globalLicenseValidity() override;
+    int64_t globalLicenseValidity() override;
 
-  bool addLicenseKey() override;
+    bool addLicenseKey() override;
 
-  std::string getLicenseKey() override;
+    std::string getLicenseKey() override;
 
-  std::string alertMessage() const override;
+    std::string alertMessage() const override;
 
-  uint32_t userAlertCount(uint32_t value) override {
-    uint32_t val;
+    uint32_t userAlertCount(uint32_t value) override
+    {
+        uint32_t val;
 
-    if (value == IfcBase::userAlertCount()) {
-      return value;
+        if (value == IfcBase::userAlertCount())
+        {
+            return value;
+        }
+
+        val = getMinValidityDate();
+        if ((value > maxUserAlertCountValue) || (value >= val))
+        {
+            lg2::error("Fail to set userAlertCount");
+            elog<InvalidArgument>(Argument::ARGUMENT_NAME("userAlertCount"),
+                                  Argument::ARGUMENT_VALUE("error"));
+        }
+
+        globalData["licenseconfig"][0]["userAlertCount"] = alertCountValue =
+            value;
+
+        val = updateJson();
+        if (val != 0)
+        {
+            std::cerr << "Failed to open the license.json file for writing."
+                      << std::endl;
+        }
+
+        updateAlertNotification();
+        val = IfcBase::userAlertCount(value);
+        return val;
     }
-
-    val = getMinValidityDate();
-    if ((value > maxUserAlertCountValue) || (value >= val)) {
-      lg2::error("Fail to set userAlertCount");
-      elog<InvalidArgument>(Argument::ARGUMENT_NAME("userAlertCount"),
-                            Argument::ARGUMENT_VALUE("error"));
-    }
-
-    globalData["licenseconfig"][0]["userAlertCount"] = alertCountValue = value;
-
-    val = updateJson();
-    if (val != 0) {
-      std::cerr << "Failed to open the license.json file for writing."
-                << std::endl;
-    }
-
-    updateAlertNotification();
-    val = IfcBase::userAlertCount(value);
-    return val;
-  }
 };
