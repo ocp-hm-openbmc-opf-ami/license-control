@@ -13,8 +13,8 @@
 
 #pragma once
 
-#include <boost/process/child.hpp>
-#include <boost/process/io.hpp>
+#include <boost/process/v1/child.hpp>
+#include <boost/process/v1/io.hpp>
 #include <nlohmann/json.hpp>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
