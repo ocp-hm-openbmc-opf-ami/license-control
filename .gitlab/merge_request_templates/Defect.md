@@ -1,3 +1,9 @@
+/title [New Repository] MR Tiltle Name
+(Kindly follow this format If the new / un-released repositories that will be referenced by OneTrees latest code after this MR is merged)
+
+/title MR Tiltle Name
+(Kindly follow this format for general cases)
+
 ## Issue URL (AMI Internal Use Only)
 (Copy full MegaRAC JIRA Workitem URL and paste here)
 
@@ -26,6 +32,9 @@
 (Do not remove this defect label)
 
 (Please provide Milestone information)
+
+## Related New / UnRelease Repository
+(Please provide the new / un-released repositories that will be referenced by OneTrees latest code after this MR is merged.)
 
 ## List additional approvers if needed
 ```@username1, @username2 ....``` (Remove ``` when adding usernames)
