@@ -29,6 +29,8 @@
 
 #include <iostream>
 
+static constexpr bool debug = false;
+
 using namespace phosphor::logging;
 using json = nlohmann::json;
 using InternalFailure =
