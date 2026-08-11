@@ -1,7 +1,7 @@
 project('licensecontrol',
   'cpp',
   version: '1.0',
-  meson_version: '>=0.57.0',
+  meson_version: '>=0.58.0',
   default_options: [
     'werror=true',
     'warning_level=3',
@@ -11,15 +11,18 @@ project('licensecontrol',
 )
 
 if get_option('tests').enabled()
+  sdbusplus = subproject('sdbusplus').get_variable('sdbusplus_dep')
+  meson.override_dependency('sdbusplus',sdbusplus)
   phosphor_dbus_interfaces = dependency('phosphor-dbus-interfaces-ami')
+  phosphor_logging_dep = subproject('phosphor-logging').get_variable('phosphor_logging_dep')
 else
+  sdbusplus = dependency('sdbusplus')
   phosphor_dbus_interfaces = dependency('phosphor-dbus-interfaces')
+  phosphor_logging_dep = dependency('phosphor-logging')
 endif
 
-sdbusplus = dependency('sdbusplus')
 sdeventplus = dependency('sdeventplus')
 systemd = dependency('systemd')
-phosphor_logging_dep = dependency('phosphor-logging')
 openssl_dep = dependency('openssl')
 
 
