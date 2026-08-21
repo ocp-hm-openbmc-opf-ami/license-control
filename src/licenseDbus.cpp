@@ -558,7 +558,10 @@ bool checkServiceStatus()
             {
                 std::string serviceName = service["serviceName"];
 
-                std::cout << "service name " << serviceName << std::endl;
+                if (debug)
+                {
+                    std::cout << "service name " << serviceName << std::endl;
+                }
 
                 // Check LicenseValidity
                 if (service.contains("LicenseValidity") &&
@@ -571,22 +574,33 @@ bool checkServiceStatus()
                     {
                         if (!isServiceRunning(serviceName))
                         {
-                            std::cout
-                                << "Service '" << serviceName
-                                << "' is not running. Starting the service."
-                                << std::endl;
+                            if (debug)
+                            {
+                                std::cout
+                                    << "Service '" << serviceName
+                                    << "' is not running. Starting the service."
+                                    << std::endl;
+                            }
                             enableResult = enableServices(serviceName);
                         }
                         else
                         {
-                            std::cout << "Service '" << serviceName
-                                      << "' is already running." << std::endl;
+                            if (debug)
+                            {
+                                std::cout
+                                    << "Service '" << serviceName
+                                    << "' is already running." << std::endl;
+                            }
                         }
 
                         if (enableResult == 0)
                         {
-                            std::cout << "Service '" << serviceName
-                                      << "' enabled successfully." << std::endl;
+                            if (debug)
+                            {
+                                std::cout
+                                    << "Service '" << serviceName
+                                    << "' enabled successfully." << std::endl;
+                            }
                         }
                         else
                         {
@@ -597,9 +611,13 @@ bool checkServiceStatus()
                     }
                     else
                     {
-                        std::cout
-                            << "LicenseValidity for service '" << serviceName
-                            << "' is zero. Skipping enable." << std::endl;
+                        if (debug)
+                        {
+                            std::cout
+                                << "LicenseValidity for service '"
+                                << serviceName << "' is zero. Skipping enable."
+                                << std::endl;
+                        }
                     }
                     serviceLicenseValidity = 0;
                 }

@@ -269,9 +269,12 @@ std::vector<std::string> getSpecificValues(const std::string& variableName)
             }
             else
             {
-                std::cerr << "Variable " << variableName
-                          << " not found in the JSON for service "
-                          << service["serviceName"] << "." << std::endl;
+                if (debug)
+                {
+                    std::cerr << "Variable " << variableName
+                              << " not found in the JSON for service "
+                              << service["serviceName"] << "." << std::endl;
+                }
             }
         }
     }
@@ -321,10 +324,13 @@ int checkServiceValidity()
                 {
                     serviceDates[ServiceNames] = "0";
 
-                    std::cout
-                        << "Service " << ServiceNames
-                        << " has exceeded the license validity. Stopping the service."
-                        << std::endl;
+                    if (debug)
+                    {
+                        std::cout
+                            << "Service " << ServiceNames
+                            << " has exceeded the license validity. Stopping the service."
+                            << std::endl;
+                    }
                     isServiceValidityExceeded++;
                     SystemCtlServiceNames =
                         getSystemCtlServiceNames(ServiceNames);
@@ -703,8 +709,11 @@ int main()
     }
     else
     {
-        std::cout << "File path does not exist: " << licenseValidityTokenPath
-                  << std::endl;
+        if (debug)
+        {
+            std::cout << "File path does not exist: "
+                      << licenseValidityTokenPath << std::endl;
+        }
     }
 
     LicenseControlImp licensecontrol(bus, objPath);
