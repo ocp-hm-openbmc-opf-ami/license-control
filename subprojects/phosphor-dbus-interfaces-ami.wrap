@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://git.ami.com/core/ami-bmc/one-tree/core/phosphor-dbus-interfaces.git
+revision = HEAD
+
+[provide]
+phosphor-dbus-interfaces-ami = phosphor_dbus_interfaces_dep
