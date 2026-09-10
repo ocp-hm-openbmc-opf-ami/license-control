@@ -10,7 +10,12 @@ project('licensecontrol',
   ]
 )
 
-phosphor_dbus_interfaces = dependency('phosphor-dbus-interfaces')
+if get_option('tests').enabled()
+  phosphor_dbus_interfaces = dependency('phosphor-dbus-interfaces-ami')
+else
+  phosphor_dbus_interfaces = dependency('phosphor-dbus-interfaces')
+endif
+
 sdbusplus = dependency('sdbusplus')
 sdeventplus = dependency('sdeventplus')
 systemd = dependency('systemd')
@@ -38,3 +43,7 @@ executable(
   install: true,
 )
 
+tests_opt = get_option('tests')
+if tests_opt.enabled()
+  subdir('tests')
+endif
